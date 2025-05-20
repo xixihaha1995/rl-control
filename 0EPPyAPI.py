@@ -39,6 +39,13 @@ def get_building_handles(state):
     # ep_api.exchange.request_variable(state, "Chiller Evaporator Outlet Temperature", "CENTRAL CHILLER")
     # ep_api.exchange.request_variable(state, "Chiller Evaporator Mass Flow Rate", "CENTRAL CHILLER")
 
+    vav1_damper_pos = ep_api.exchange.get_variable_handle(state,
+                                                        "Zone Air Terminal VAV Damper Position",
+                                                        "SPACE1-1 VAV Reheat")
+    vav1_damper_pos_min = ep_api.exchange.get_variable_handle(state,
+                                                        "Zone Air Terminal Minimum Air Flow Fraction",
+                                                        "SPACE1-1 VAV Reheat")
+
     chiller_electricity = ep_api.exchange.get_variable_handle(state,"Chiller Electricity Energy",
                                                                     "CENTRAL CHILLER")
     chiller_evaporator_outlet_temp = ep_api.exchange.get_variable_handle(state,
@@ -57,6 +64,7 @@ def get_building_handles(state):
     Actuator,System Node Setpoint,Temperature Setpoint,CENTRAL CHILLER OUTLET NODE,[C]
     Actuator,System Node Setpoint,Temperature Minimum Setpoint,CENTRAL CHILLER OUTLET NODE,[C]
     Actuator,System Node Setpoint,Temperature Maximum Setpoint,CENTRAL CHILLER OUTLET NODE,[C]
+    Actuator,System Node Setpoint,Mass Flow Rate Setpoint,SPACE1-1 NODE,[kg/s]
     '''
     chillerEvaporatorOutletTempAct = ep_api.exchange.get_actuator_handle(state,
                                                                     "System Node Setpoint",
@@ -70,14 +78,19 @@ def get_building_handles(state):
                                                                     "System Node Setpoint",
                                                                     "Temperature Maximum Setpoint",
                                                                     "CENTRAL CHILLER OUTLET NODE")
-
+    vav1MdotKgSAct = ep_api.exchange.get_actuator_handle(state,
+                                                                    "System Node Setpoint",
+                                                                    "Mass Flow Rate Setpoint",
+                                                                    "SPACE1-1 NODE")
 
     #find if any of hanldes < -1, then raise exception
     _allHandles = [oat_c, direct_rad, diffuse_rad, wind_speed, wind_dir,
+                vav1_damper_pos, vav1_damper_pos_min,
                 chiller_electricity, chiller_evaporator_outlet_temp,
                 chiller_evaporator_outlet_temp_high, chiller_evaporator_outlet_temp_low,
                 chiller_evaporator_mass_flow_rate, chillerEvaporatorOutletTempAct,
-                chillerEvaporatorOutletTempActMin, chillerEvaporatorOutletTempActMax]
+                chillerEvaporatorOutletTempActMin, chillerEvaporatorOutletTempActMax,
+                vav1MdotKgSAct]
     if any([x < 0 for x in _allHandles]):
         raise Exception("Error: Invalid handle")
 
@@ -88,6 +101,8 @@ def get_building_handles(state):
     allHandles['sensor']['Diffuse_Solar_Radiation'] = diffuse_rad
     allHandles['sensor']['Wind_Speed'] = wind_speed
     allHandles['sensor']['Wind_Direction'] = wind_dir
+    allHandles['sensor']['VAV1_Damper_Position'] = vav1_damper_pos
+    allHandles['sensor']['VAV1_Damper_Position_Min'] = vav1_damper_pos_min
     allHandles['sensor']['Chiller_Electricity'] = chiller_electricity
     allHandles['sensor']['Chiller_Evaporator_Outlet_Temperature'] = chiller_evaporator_outlet_temp
     allHandles['sensor']['Chiller_Evaporator_Outlet_Temperature_High'] = chiller_evaporator_outlet_temp_high
@@ -97,6 +112,7 @@ def get_building_handles(state):
     allHandles['actuator']['ChillerEvaporatorOutletTempAct'] = chillerEvaporatorOutletTempAct
     allHandles['actuator']['ChillerEvaporatorOutletTempActMin'] = chillerEvaporatorOutletTempActMin
     allHandles['actuator']['ChillerEvaporatorOutletTempActMax'] = chillerEvaporatorOutletTempActMax
+    allHandles['actuator']['VAV1MdotKgSAct'] = vav1MdotKgSAct
 def get_sensor_value(state):
     sensor_values = {}
     dayofMonth = ep_api.exchange.day_of_month(state)
@@ -118,6 +134,10 @@ def get_sensor_value(state):
     sensor_values['Wind_Speed'] = ep_api.exchange.get_variable_value(state, allHandles['sensor']['Wind_Speed'])
     sensor_values['Wind_Direction'] = ep_api.exchange.get_variable_value(state,
                                                                            allHandles['sensor']['Wind_Direction'])
+    sensor_values['VAV1_Damper_Position'] = ep_api.exchange.get_variable_value(state,
+                                                                                    allHandles['sensor']['VAV1_Damper_Position'])
+    sensor_values['VAV1_Damper_Position_Min'] = ep_api.exchange.get_variable_value(state,
+                                                                                        allHandles['sensor']['VAV1_Damper_Position_Min'])
     sensor_values['Chiller_Electricity'] = ep_api.exchange.get_variable_value(state,
                                                                                  allHandles['sensor']['Chiller_Electricity'])
     sensor_values['Chiller_Evaporator_Outlet_Temperature'] = ep_api.exchange.get_variable_value(state,
@@ -135,16 +155,23 @@ def get_sensor_value(state):
     return sensor_values
 
 def set_actuators(state):
-    '_chillerEvaOutTempCVal: range 4 to 15'
-    _chillerEvaOutTempCVal = 0
-    _chillerSWTMinCVal = -999
-    _chillerSWTMaxCVal = -999
+    # '_chillerEvaOutTempCVal: range 4 to 15'
+    # _chillerEvaOutTempCVal = 0
+    # _chillerSWTMinCVal = -999
+    # _chillerSWTMaxCVal = -999
+
+    airRhoKgM3 = 1.293
+    vav1MdotM3SMax = 0.221001
+    _vav1TargetFraction = 0
+    _temVAV1KgSVal = vav1MdotM3SMax * airRhoKgM3 * _vav1TargetFraction
+    ep_api.exchange.set_actuator_value(state,
+        allHandles['actuator']['VAV1MdotKgSAct'], _temVAV1KgSVal)
     # ep_api.exchange.set_actuator_value(state,
     #    allHandles['actuator']['ChillerEvaporatorOutletTempAct'],_chillerEvaOutTempCVal)
-    ep_api.exchange.set_actuator_value(state,
-         allHandles['actuator']['ChillerEvaporatorOutletTempActMin'],_chillerSWTMinCVal)
-    ep_api.exchange.set_actuator_value(state,
-            allHandles['actuator']['ChillerEvaporatorOutletTempActMax'],_chillerSWTMaxCVal)
+    # ep_api.exchange.set_actuator_value(state,
+    #      allHandles['actuator']['ChillerEvaporatorOutletTempActMin'],_chillerSWTMinCVal)
+    # ep_api.exchange.set_actuator_value(state,
+    #         allHandles['actuator']['ChillerEvaporatorOutletTempActMax'],_chillerSWTMaxCVal)
 
 def api_to_csv(state):
     orig = ep_api.exchange.list_available_api_data_csv(state)
@@ -169,7 +196,7 @@ def timeStepHandlerToObsere(state):
             safeToOverwrite = True
         line = ""
         for _k in sensor_values.keys():
-            if "Chiller" in _k:
+            if "Chiller" in _k or "VAV" in _k:
                 line += f"{_k} : {sensor_values[_k]}  "
         print(line)
 
@@ -206,11 +233,15 @@ def init():
     OutputVariable,Chiller Evaporator Inlet Temperature,CENTRAL CHILLER,[C]
     OutputVariable,Chiller Evaporator Outlet Temperature,CENTRAL CHILLER,[C]
     OutputVariable,Chiller Evaporator Mass Flow Rate,CENTRAL CHILLER,[kg/s]
+    Zone Air Terminal VAV Damper Position, SPACE1-1 VAV Reheat
+    Zone Air Terminal Minimum Air Flow Fraction, SPACE1-1 VAV Reheat
     '''
     ep_api.exchange.request_variable(state, "Chiller Evaporator Outlet Temperature", "CENTRAL CHILLER")
     ep_api.exchange.request_variable(state, "System Node Setpoint High Temperature", "CENTRAL CHILLER OUTLET NODE")
     ep_api.exchange.request_variable(state, "System Node Setpoint Low Temperature", "CENTRAL CHILLER OUTLET NODE")
     ep_api.exchange.request_variable(state, "Chiller Evaporator Mass Flow Rate", "CENTRAL CHILLER")
+    ep_api.exchange.request_variable(state, "Zone Air Terminal VAV Damper Position", "SPACE1-1 VAV Reheat")
+    ep_api.exchange.request_variable(state, "Zone Air Terminal Minimum Air Flow Fraction", "SPACE1-1 VAV Reheat")
 
     return state
 def main(idfFilePath, weather_file_path):
