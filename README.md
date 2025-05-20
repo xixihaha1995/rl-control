@@ -18,9 +18,57 @@ SimulationControl,
     Yes,                     !- Run Simulation for Weather File Run Periods
     No,                      !- Do HVAC Sizing Simulation for Sizing Periods
     1;                       !- Maximum Number of HVAC Sizing Simulation Passes
-Why does this line matter, "Do HVAC Sizing Simulation for Sizing Periods"?
 
-#### Replication
+ConvergenceLimits,
+    0,                       !- Minimum System Timestep {minutes}
+    25;                      !- Maximum HVAC Iterations
+
+callback_begin_system_timestep_before_predictor
+    reduce lighting or process loads, change thermostat settings,
+callback_after_predictor_before_hvac_managers
+    the EMS control actions could be overwritten by other SetpointManager
+✅callback_after_predictor_after_hvac_managers
+    SetpointManager or AvailabilityManager actions may be overwritten by EMS control actions.
+..before reporting
+    custom output
+callback_end_system_timestep_after_hvac_reporting
+✅callback_end_zone_timestep_after_zone_reporting
+
+Why does this line matter, "Do HVAC Sizing Simulation for Sizing Periods"?
+    Space3-1
+Space4-1 Space5-1 Space2-1 
+    Space1-1
+
+! Zone Description Details:
+!
+!      (0,15.2,0)                      (30.5,15.2,0)
+!           _____   ________                ____
+!         |\     ***        ****************   /|
+!         | \                                 / |
+!         |  \                 (26.8,11.6,0) /  |
+!         *   \_____________________________/   *
+!         *    |(3.7,11.6,0)               |    *
+!         *    |                           |    *
+!         *    |                           |    *
+!         *    |               (26.8,3.7,0)|    *
+!         *    |___________________________|    *
+!         *   / (3.7,3.7,0)                 \   *
+!         |  /                               \  |
+!         | /                                 \ |
+!         |/___******************___***________\|
+!          |       Overhang        |   |
+!          |_______________________|   |   window/door = *
+!                                  |___|
+!
+!      (0,0,0)                            (30.5,0,0)
+
+#### Attempt 2
+
+observations: time (24 hours, weekday), odb, diffuse, direct, wind speed, wind direction, 
+    zat, chiller electricity
+actions (initial sensor values or ranges and policy setting values): CENTRAL CHILLER OUTLET NODE (temperature)
+
+#### Reading IDF
 Object in IDF: 
 - CENTRAL CHILLER OUTLET NODE
 - MAIN COOLING COIL 1 WATER INLET NODE (MAIN COOLING COIL 1)
@@ -36,6 +84,11 @@ Actuator,System Node Setpoint,Mass Flow Rate Maximum Available Setpoint,CENTRAL 
 Actuator,System Node Setpoint,Mass Flow Rate Minimum Available Setpoint,CENTRAL CHILLER OUTLET NODE,[kg/s]
 OutputVariable,Chiller Electricity Rate,CENTRAL CHILLER,[W]
 OutputVariable,Chiller Electricity Energy,CENTRAL CHILLER,[J]
+Central Chiller Inlet Node,  !- Chilled Water Inlet Node Name
+Central Chiller Outlet Node,  !- Chilled Water Outlet Node Name
+OutputVariable,Chiller Evaporator Inlet Temperature,CENTRAL CHILLER,[C]
+OutputVariable,Chiller Evaporator Outlet Temperature,CENTRAL CHILLER,[C]
+OutputVariable,Chiller Evaporator Mass Flow Rate,CENTRAL CHILLER,[kg/s]
 
 Actuator,System Node Setpoint,Temperature Setpoint,MAIN COOLING COIL 1 WATER INLET NODE,[C]
 Actuator,System Node Setpoint,Temperature Minimum Setpoint,MAIN COOLING COIL 1 WATER INLET NODE,[C]

@@ -4,6 +4,10 @@
 !-NOTE: All comments with '!-' are ignored by the IDFEditor and are generated automatically.
 !-      Use '!' comments if they need to be retained when using the IDFEditor.
 
+ConvergenceLimits,
+    0,                       !- Minimum System Timestep {minutes}
+    25;                      !- Maximum HVAC Iterations
+
 ! 5ZoneAirCooled_VAVBoxMinAirFlowTurndown.idf
 ! Basic file description:  1 story building divided into 4 exterior and one interior conditioned zones and return plenum.
 !                          A single VAV air loop serves the five zones, Based on 5ZoneAirCooled.idf
@@ -3414,6 +3418,7 @@ Output:Variable,*,Plant Supply Side Heating Demand Rate,hourly;
 Output:Variable,*,Boiler NaturalGas Rate,hourly;
 Output:Variable,*,Boiler Heating Rate,hourly;
 Output:Variable,*,Chiller Electricity Rate,hourly;
+Output:Variable,*,Chiller Electricity Energy,hourly;
 Output:Variable,*,Chiller Evaporator Cooling Rate,hourly;
 Output:Variable,*,Chiller Evaporator Inlet Temperature,hourly;
 Output:Variable,*,Chiller Evaporator Outlet Temperature,hourly;
