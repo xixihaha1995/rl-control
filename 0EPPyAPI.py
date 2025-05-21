@@ -251,6 +251,7 @@ def main(idfFilePath, weather_file_path):
     output_path = './ep_trivial'
     sys_args = '-d', output_path, '-w', weather_file_path, idfFilePath
     ep_api.runtime.run_energyplus(state, sys_args)
+    ep_api.state_manager.reset_state(state)
 
 if __name__ == '__main__':
     _idf = '5ZoneAirCooled_VAVBoxMinAirFlowTurnDown.idf'

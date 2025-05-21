@@ -19,6 +19,26 @@ SimulationControl,
     No,                      !- Do HVAC Sizing Simulation for Sizing Periods
     1;                       !- Maximum Number of HVAC Sizing Simulation Passes
 
+Why does this line matter, "Do HVAC Sizing Simulation for Sizing Periods"?
+
+
+#### Incremental Development
+
+observations: time (24 hours, weekday), odb, diffuse, direct, wind speed, wind direction, 
+    zat, chiller electricity
+actions (initial sensor values or ranges and policy setting values): CENTRAL CHILLER OUTLET NODE (temperature)
+
+- ✅guess one number
+- ❌guess 5 number sequence (time series)
+
+#### Archived notes for IDF
+
+SetpointManager:Scheduled,
+    Central Chiller Setpoint Manager,  !- Name
+    Temperature,             !- Control Variable
+    CW Loop Temp Schedule,   !- Schedule Name
+    Central Chiller Outlet Node;  !- Setpoint Node or NodeList Name
+
 ConvergenceLimits,
     0,                       !- Minimum System Timestep {minutes}
     25;                      !- Maximum HVAC Iterations
@@ -34,7 +54,7 @@ callback_after_predictor_before_hvac_managers
 callback_end_system_timestep_after_hvac_reporting
 ✅callback_end_zone_timestep_after_zone_reporting
 
-Why does this line matter, "Do HVAC Sizing Simulation for Sizing Periods"?
+
     Space3-1
 Space4-1 Space5-1 Space2-1 
     Space1-1
@@ -62,19 +82,6 @@ Space4-1 Space5-1 Space2-1
 !
 !      (0,0,0)                            (30.5,0,0)
 
-#### Attempt 2
-
-observations: time (24 hours, weekday), odb, diffuse, direct, wind speed, wind direction, 
-    zat, chiller electricity
-actions (initial sensor values or ranges and policy setting values): CENTRAL CHILLER OUTLET NODE (temperature)
-
-SetpointManager:Scheduled,
-    Central Chiller Setpoint Manager,  !- Name
-    Temperature,             !- Control Variable
-    CW Loop Temp Schedule,   !- Schedule Name
-    Central Chiller Outlet Node;  !- Setpoint Node or NodeList Name
-
-#### Reading IDF
 Object in IDF: 
 - CENTRAL CHILLER OUTLET NODE
 - MAIN COOLING COIL 1 WATER INLET NODE (MAIN COOLING COIL 1)
