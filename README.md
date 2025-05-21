@@ -68,6 +68,12 @@ observations: time (24 hours, weekday), odb, diffuse, direct, wind speed, wind d
     zat, chiller electricity
 actions (initial sensor values or ranges and policy setting values): CENTRAL CHILLER OUTLET NODE (temperature)
 
+SetpointManager:Scheduled,
+    Central Chiller Setpoint Manager,  !- Name
+    Temperature,             !- Control Variable
+    CW Loop Temp Schedule,   !- Schedule Name
+    Central Chiller Outlet Node;  !- Setpoint Node or NodeList Name
+
 #### Reading IDF
 Object in IDF: 
 - CENTRAL CHILLER OUTLET NODE

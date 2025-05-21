@@ -156,18 +156,20 @@ def get_sensor_value(state):
 
 def set_actuators(state):
     # '_chillerEvaOutTempCVal: range 4 to 15'
-    # _chillerEvaOutTempCVal = 0
     # _chillerSWTMinCVal = -999
     # _chillerSWTMaxCVal = -999
 
+    _chillerEvaOutTempCVal = 14
+    ep_api.exchange.set_actuator_value(state,
+       allHandles['actuator']['ChillerEvaporatorOutletTempAct'],_chillerEvaOutTempCVal)
+
     airRhoKgM3 = 1.293
     vav1MdotM3SMax = 0.221001
-    _vav1TargetFraction = 0
+    _vav1TargetFraction = 0.7
     _temVAV1KgSVal = vav1MdotM3SMax * airRhoKgM3 * _vav1TargetFraction
-    ep_api.exchange.set_actuator_value(state,
-        allHandles['actuator']['VAV1MdotKgSAct'], _temVAV1KgSVal)
     # ep_api.exchange.set_actuator_value(state,
-    #    allHandles['actuator']['ChillerEvaporatorOutletTempAct'],_chillerEvaOutTempCVal)
+    #     allHandles['actuator']['VAV1MdotKgSAct'], _temVAV1KgSVal)
+
     # ep_api.exchange.set_actuator_value(state,
     #      allHandles['actuator']['ChillerEvaporatorOutletTempActMin'],_chillerSWTMinCVal)
     # ep_api.exchange.set_actuator_value(state,
