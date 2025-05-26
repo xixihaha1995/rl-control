@@ -4,11 +4,11 @@ from stable_baselines3 import SAC
 
 env = gym.make("Pendulum-v1", render_mode="human")
 
-# model = SAC("MlpPolicy", env, verbose=1)
-# model.learn(total_timesteps=10000, log_interval=4)
-# model.save("sac_pendulum")
-# print("saved")
-# del model # remove to demonstrate saving and loading
+model = SAC("MlpPolicy", env, verbose=1)
+model.learn(total_timesteps=10000, log_interval=4)
+model.save("sac_pendulum")
+print("saved")
+del model # remove to demonstrate saving and loading
 
 model = SAC.load("sac_pendulum")
 
