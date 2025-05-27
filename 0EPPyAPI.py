@@ -1,6 +1,6 @@
 import os, sys, datetime
-sys.path.insert(0, '/usr/local/EnergyPlus-24-2-0/')
-sys.path.insert(0, 'C:/EnergyPlusV24-2-0')
+sys.path.insert(0, '/usr/local/EnergyPlus-24-1-0/')
+sys.path.insert(0, 'C:/EnergyPlusV24-1-0')
 from pyenergyplus.api import EnergyPlusAPI
 
 def get_zone_handles(state):

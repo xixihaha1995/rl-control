@@ -1,61 +1,37 @@
-import numpy as np
-import gymnasium as gym
+import gymnasium as gym, numpy as np
 from gymnasium import spaces
-
+from queue import Queue
 from stable_baselines3.common.env_checker import check_env
-initCount = 0
-resetCount = 0
-stepCount = 0
-class GoLeftEnv(gym.Env):
-    """
-    Custom Environment that follows gym interface.
-    This is a simple env where the agent must learn to go always left.
-    """
+from EPlus_0_Simulator import EPlusSimulatorForGymEnv
 
-    # Because of google colab, we cannot implement the GUI ('human' render mode)
-    metadata = {"render_modes": ["console"]}
 
-    # Define constants for clearer code
-    LEFT = 0
-    RIGHT = 1
-
-    def __init__(self, grid_size=10, render_mode="console"):
-        super(GoLeftEnv, self).__init__()
-        self.render_mode = render_mode
-        global initCount
-        initCount += 1
-        print("I'm initing (init,reset,step):" + str(initCount) + " " + str(resetCount) + " " + str(stepCount))
-        # Size of the 1D-grid
-        self.grid_size = grid_size
-        # Initialize the agent at the right of the grid
-        self.agent_pos = grid_size - 1
-
-        # Define action and observation space
-        # They must be gym.spaces objects
-        # Example when using discrete actions, we have two: left and right
-        n_actions = 2
-        self.action_space = spaces.Discrete(n_actions)
-        # The observation will be the coordinate of the agent
-        # this can be described both by Discrete and Box space
-        self.observation_space = spaces.Box(
-            low=0, high=self.grid_size, shape=(1,), dtype=np.float32
-        )
-
+class EplusEnv(gym.Env):
+    def __init__(self, grid_size=10):
+        super(EplusEnv, self).__init__()
+        self.obs_queue = Queue(maxsize=1)
+        self.act_queue = Queue(maxsize=1)
+        self.epSimulator = EPlusSimulatorForGymEnv(self.obs_queue, self.act_queue)
     def reset(self, seed=None, options=None):
         """
         Important: the observation must be a numpy array
         :return: (np.array)
         """
         super().reset(seed=seed, options=options)
-        # Initialize the agent at the right of the grid
-        self.agent_pos = self.grid_size - 1
-        global resetCount
-        resetCount += 1
-        print("I'm resetting (init,reset,step):" + str(initCount) + " " + str(resetCount) + " " + str(stepCount))
+        self.epsimulator.start()  # start the EnergyPlus simulator thread
         # here we convert to float32 to make it more general (in case we want to use continuous actions)
         return np.array([self.agent_pos]).astype(np.float32), {}  # empty info dict
 
     def step(self, action):
+        self.timestep += 1
+        terminated, truncated = False, False
+
+        if self.energyplus_simulator.simulation_complete:
+            truncated = True
+            obs = self.last_obs
+        else:
+            self.act_queue.put(action)
+            obs = self.obs_queue.get()
+
         if action == self.LEFT:
             self.agent_pos -= 1
         elif action == self.RIGHT:
@@ -66,23 +42,24 @@ class GoLeftEnv(gym.Env):
             )
         # Account for the boundaries of the grid
         self.agent_pos = np.clip(self.agent_pos, 0, self.grid_size)
-        global stepCount
-        stepCount += 1
-        print("I'm stepping (init,reset,step):" + str(initCount) + " " + str(resetCount) + " " + str(stepCount))
         # Are we at the left of the grid?
         terminated = bool(self.agent_pos == 0)
         truncated = False  # we do not limit the number of steps here
 
         # Null reward everywhere except when reaching the goal (left of the grid)
         reward = 1 if self.agent_pos == 0 else 0
-        if reward == 1:
-            print("I got reward!")
+        '''
+        energy_term = self.lambda_energy * self.W_energy * self.energy_penalty
+        comfort_term = self.lambda_temp * \
+            (1 - self.W_energy) * self.comfort_penalty
+        reward = energy_term + comfort_term
+        '''
 
         # Optionally we can pass additional info, we are not using that for now
         info = {}
 
         return (
-            np.array([self.agent_pos]).astype(np.float32),
+            np.fromiter(obs.values(), dtype=np.float32),
             reward,
             terminated,
             truncated,
@@ -90,14 +67,10 @@ class GoLeftEnv(gym.Env):
         )
 
     def render(self):
-        # agent is represented as a cross, rest as a dot
-        if self.render_mode == "console":
-            print("." * self.agent_pos, end="")
-            print("x", end="")
-            print("." * (self.grid_size - self.agent_pos))
+        pass
 
     def close(self):
-        pass
+        self.epSimulator.stop()
 
 from stable_baselines3 import PPO, A2C, DQN
 from stable_baselines3.common.env_util import make_vec_env
