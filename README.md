@@ -10,6 +10,14 @@ https://github.com/DLR-RM/rl-trained-agents/blob/master/ddpg/AntBulletEnv-v0_1/A
 http://github.com/IBM/rl-testbed-for-energyplus
 https://github.com/airboxlab/rllib-energyplus
 https://github.com/ugr-sail/sinergym
+    https://docs.python.org/3/library/queue.html#queue.Queue.put
+    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/simulators/eplus.py#L182
+    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/simulators/eplus.py#L149
+    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/simulators/eplus.py#L153
+
+    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/envs/eplus_env.py#L284
+    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/envs/eplus_env.py#L371
+    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/envs/eplus_env.py#L373
 https://github.com/ray-project/ray
 https://docs.ray.io/en/latest/rllib/rllib-env.html
 https://github.com/intelligent-environments-lab/CityLearn
