@@ -26,3 +26,4 @@ api_data.csv
 *.idd
 *.wrl
 sac_pendulum.zip
+*.pyc

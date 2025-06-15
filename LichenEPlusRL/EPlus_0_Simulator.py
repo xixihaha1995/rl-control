@@ -2,7 +2,7 @@ import sys, threading,datetime
 sys.path.insert(0, 'C:/EnergyPlusV24-1-0')
 from pyenergyplus.api import EnergyPlusAPI
 class EPlusSimulatorForGymEnv(object):
-    def __int__(self, obsQ, actQ):
+    def __init__(self, obsQ, actQ):
         self.ep_api = EnergyPlusAPI()
         self.obs_queue = obsQ
         self.act_queue = actQ
@@ -31,7 +31,7 @@ class EPlusSimulatorForGymEnv(object):
         self.ep_api.exchange.request_variable(self.state, "Zone Air Terminal VAV Damper Position", "SPACE1-1 VAV Reheat")
         self.ep_api.exchange.request_variable(self.state, "Zone Air Terminal Minimum Air Flow Fraction", "SPACE1-1 VAV Reheat")
 
-        output_path = './ep_trivial'
+        output_path = '../ep_trivial'
         sys_args = '-d', output_path, '-w', _epw, _idf
         def _run_energyplus(_sys_args):
             self.ep_api.runtime.run_energyplus(self.state, _sys_args)

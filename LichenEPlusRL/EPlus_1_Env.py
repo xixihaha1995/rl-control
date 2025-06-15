@@ -1,16 +1,20 @@
 import gymnasium as gym, numpy as np
-from gymnasium import spaces
 from queue import Queue
-from stable_baselines3.common.env_checker import check_env
-from EPlus_0_Simulator import EPlusSimulatorForGymEnv
+
+from LichenEPlusRL.EPlus_0_Simulator import EPlusSimulatorForGymEnv
 
 
 class EplusEnv(gym.Env):
-    def __init__(self, grid_size=10):
-        super(EplusEnv, self).__init__()
+    def __init__(self, time_variables, variables, meters):
+        # super(EplusEnv, self).__init__()
         self.obs_queue = Queue(maxsize=1)
         self.act_queue = Queue(maxsize=1)
         self.epSimulator = EPlusSimulatorForGymEnv(self.obs_queue, self.act_queue)
+        self.observation_space = gym.spaces.Box(
+            low=-6e11,
+            high=6e11,
+            shape=(len(time_variables) + len(variables) + len(meters),),
+            dtype=np.float32)
     def reset(self, seed=None, options=None):
         """
         Important: the observation must be a numpy array
@@ -72,31 +76,4 @@ class EplusEnv(gym.Env):
     def close(self):
         self.epSimulator.stop()
 
-from stable_baselines3 import PPO, A2C, DQN
-from stable_baselines3.common.env_util import make_vec_env
 
-# Instantiate the env
-vec_env = make_vec_env(GoLeftEnv, n_envs=1, env_kwargs=dict(grid_size=10))
-
-env = GoLeftEnv(grid_size=10)
-print("before learning")
-# Train the agent
-model = A2C("MlpPolicy", env, verbose=1).learn(5000)
-print("after learning")
-
-# # Test the trained agent
-# # using the vecenv
-obs = vec_env.reset()
-n_steps = 20
-for step in range(n_steps):
-    action, _ = model.predict(obs, deterministic=True)
-    print(f"Step {step + 1}")
-    print("Action: ", action)
-    obs, reward, done, info = vec_env.step(action)
-    print("obs=", obs, "reward=", reward, "done=", done)
-    vec_env.render()
-    if done:
-        # Note that the VecEnv resets automatically
-        # when a done signal is encountered
-        print("Goal reached!", "reward=", reward)
-        break
