@@ -1,25 +1,36 @@
 ### Learning From Sinergym
 
 #### Github Critical Concurrency Design
-https://doi.org/10.1016/j.apenergy.2024.125046
-https://gymnasium.farama.org/api/env/
+
 https://github.com/ugr-sail/sinergym
-https://github.com/intelligent-environments-lab/CityLearn
-    https://docs.python.org/3/library/queue.html#queue.Queue.put
-    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/simulators/eplus.py#L182
-    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/simulators/eplus.py#L149
-    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/simulators/eplus.py#L153
-    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/envs/eplus_env.py#L284
-    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/envs/eplus_env.py#L371
-    https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/envs/eplus_env.py#L373
-    Truncated/complete: https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/simulators/eplus.py#L167
-    Truncated/complete: https://github.com/ugr-sail/sinergym/blob/4ae5986c5130eb485c81cc0fefaaa12ac1bce769/sinergym/envs/eplus_env.py#L359
-        - truncated (bool) – Whether the truncation condition outside the scope of the MDP is satisfied. 
-            Typically, this is a **timelimit**, but could also be used to indicate an agent physically going out of bounds.
-        - Reward should be generally set as negative 
-            (except final goal is achieved, but building resource efficient control is not goal-oriented), 
-            so no intermediate termination/truncation will be triggered.
-        - reset() - Resets the environment to an initial state, required **before** calling step
+https://docs.python.org/3/library/queue.html#queue.Queue.put
+
+- reset() - Resets the environment to an initial state, required **before** calling step
+- Environment>reset>energyplus_simulator.start()
+  - https://github.com/ugr-sail/sinergym/blob/main/sinergym/envs/eplus_env.py#L292
+- Simulator>start
+  - https://github.com/ugr-sail/sinergym/blob/main/sinergym/simulators/eplus.py#L108
+- Simulator>Start>Callback>process_action
+  - https://github.com/ugr-sail/sinergym/blob/main/sinergym/simulators/eplus.py#L153
+- Simulator>Start>Callback>collect_obs_and_info
+  - https://github.com/ugr-sail/sinergym/blob/main/sinergym/simulators/eplus.py#L149
+- Simulator>Start>runtime.run_energyplus(state, sys_args).thread
+  - https://github.com/ugr-sail/sinergym/blob/main/sinergym/simulators/eplus.py#L182
+- Environment>Step>act_queue.put(action)
+  - https://github.com/ugr-sail/sinergym/blob/main/sinergym/envs/eplus_env.py#L379
+- Environment>Step>obs_queue.get(timeout=2)
+  - https://github.com/ugr-sail/sinergym/blob/main/sinergym/envs/eplus_env.py#L379
+- Truncated (Farama Gymnasium, bool)> Timelimit
+  - Whether the truncation condition outside the scope of the MDP is satisfied. 
+  - Typically, this is a **timelimit**, but could also be used to indicate an agent physically going out of bounds. 
+  - Reward should be generally set as negative in buildng energy efficiency control tasks,
+  - (except final goal is achieved, but building resource efficient control is not goal-oriented), 
+  - so no intermediate termination/truncation will be triggered.
+- Truncated>Simulator(EPlus simulation is finished)
+  - https://github.com/ugr-sail/sinergym/blob/main/sinergym/simulators/eplus.py#L167
+- Truncated>Environment>step>truncated = True
+  - https://github.com/ugr-sail/sinergym/blob/main/sinergym/envs/eplus_env.py#L367
+
 
 #### My Own Concurrency Implementation
 Co-simulation with EnergyPlus:
@@ -42,12 +53,18 @@ Handle exceptions:
 ### RL-EPlus Software Development
 
 #### Reference
+- https://github.com/intelligent-environments-lab/CityLearn
+- https://doi.org/10.1016/j.apenergy.2024.125046
+- https://gymnasium.farama.org/api/env/
+```paper notes
 https://doi.org/10.1016/j.apenergy.2024.125046
+
 VAV Box, VAV Damper Signal, discharge air mass flow rate
 Chilled Water, Chiller Supply Water Temperature, range between 4 to 15°C
 Chilled Water, Cooling Coil Valve Signal / Chiller Valve Position, range between 0 to 1 with 0.1 increments
 Air, Fan speed RPM Signal
 Air, Economizer Damper Signal, Regulating mixed air temperature, range between minimum for adequate air quality, maximum
+```
 
 #### Incremental Development
 observations: time (24 hours, weekday), odb, diffuse, direct, wind speed, wind direction, 
@@ -59,6 +76,8 @@ actions (initial sensor values or ranges and policy setting values): CENTRAL CHI
 https://github.com/Farama-Foundation/Gymnasium/tree/main/gymnasium/envs/classic_control
 
 #### General EPlus Question
+
+```idf
 SimulationControl,
     Yes,                     !- Do Zone Sizing Calculation
     Yes,                     !- Do System Sizing Calculation
@@ -67,12 +86,13 @@ SimulationControl,
     Yes,                     !- Run Simulation for Weather File Run Periods
     No,                      !- Do HVAC Sizing Simulation for Sizing Periods
     1;                       !- Maximum Number of HVAC Sizing Simulation Passes
-
+    
 Why does this line matter, "Do HVAC Sizing Simulation for Sizing Periods"?
-
+```
 
 #### Archived notes for IDF
 
+```idf
 SetpointManager:Scheduled,
     Central Chiller Setpoint Manager,  !- Name
     Temperature,             !- Control Variable
@@ -82,17 +102,6 @@ SetpointManager:Scheduled,
 ConvergenceLimits,
     0,                       !- Minimum System Timestep {minutes}
     25;                      !- Maximum HVAC Iterations
-
-callback_begin_system_timestep_before_predictor
-    reduce lighting or process loads, change thermostat settings,
-callback_after_predictor_before_hvac_managers
-    the EMS control actions could be overwritten by other SetpointManager
-✅callback_after_predictor_after_hvac_managers
-    SetpointManager or AvailabilityManager actions may be overwritten by EMS control actions.
-..before reporting
-    custom output
-callback_end_system_timestep_after_hvac_reporting
-✅callback_end_zone_timestep_after_zone_reporting
 
 
     Space3-1
@@ -122,6 +131,23 @@ Space4-1 Space5-1 Space2-1
 !
 !      (0,0,0)                            (30.5,0,0)
 
+```
+
+```python
+callback_begin_system_timestep_before_predictor
+    # reduce lighting or process loads, change thermostat settings,
+callback_after_predictor_before_hvac_managers
+    # the EMS control actions could be overwritten by other SetpointManager
+✅callback_after_predictor_after_hvac_managers
+    # SetpointManager or AvailabilityManager actions may be overwritten by EMS control actions.
+# ..before reporting
+#     custom output
+callback_end_system_timestep_after_hvac_reporting
+✅callback_end_zone_timestep_after_zone_reporting
+```
+
+
+```csv
 Object in IDF: 
 - CENTRAL CHILLER OUTLET NODE
 - MAIN COOLING COIL 1 WATER INLET NODE (MAIN COOLING COIL 1)
@@ -160,18 +186,20 @@ OutputVariable,Fan Electricity Energy,SUPPLY FAN 1,[J]
 Actuator,System Node Setpoint,Mass Flow Rate Setpoint,SPACE3-1 NODE,[kg/s]
 Actuator,System Node Setpoint,Mass Flow Rate Maximum Available Setpoint,SPACE3-1 NODE,[kg/s]
 Actuator,System Node Setpoint,Mass Flow Rate Minimum Available Setpoint,SPACE3-1 NODE,[kg/s]
+```
 
 ### Archived Theory Learning Notes
 
-https://github.com/Farama-Foundation/Gymnasium/tree/main/gymnasium/envs/classic_control
-https://stable-baselines3.readthedocs.io/en/master/modules/ddpg.html
-https://github.com/openai/spinningup
-https://github.com/DLR-RM/rl-trained-agents/blob/master/ddpg/AntBulletEnv-v0_1/AntBulletEnv-v0/config.yml
-http://github.com/IBM/rl-testbed-for-energyplus
-https://github.com/airboxlab/rllib-energyplus
-https://github.com/ray-project/ray
-https://docs.ray.io/en/latest/rllib/rllib-env.html
+- https://github.com/Farama-Foundation/Gymnasium/tree/main/gymnasium/envs/classic_control
+- https://stable-baselines3.readthedocs.io/en/master/modules/ddpg.html
+- https://github.com/openai/spinningup
+- https://github.com/DLR-RM/rl-trained-agents/blob/master/ddpg/AntBulletEnv-v0_1/AntBulletEnv-v0/config.yml
+- http://github.com/IBM/rl-testbed-for-energyplus
+- https://github.com/airboxlab/rllib-energyplus
+- https://github.com/ray-project/ray
+- https://docs.ray.io/en/latest/rllib/rllib-env.html
 
+```txt
 q*(a), the expected value of the action a.
 Q(a), sample average method, the average of the rewards received after taking action a.
 Q-learning, the action-value function is updated using the Bellman equation. (critics, as compared to policy, which is actors)
@@ -197,3 +225,4 @@ Total Time Steps in Enviroment (RL algos)
 - maximize some notion of **cumulative reward over a trajectory**
 - Let's say you have an environment with more than 1000 timesteps
 - you know how many timesteps the environment should last (i.e CartPole)
+```
